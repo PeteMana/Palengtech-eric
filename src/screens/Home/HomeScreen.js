@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-lone-blocks */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable no-unused-vars */
@@ -14,23 +15,39 @@ import {
     ImageBackground,
     SafeAreaView,
     Image,
+    Animated,
 } from 'react-native';
-// import { Picker } from '@react-native-picker/picker';
-// import { Container, Header, Icon, Item, Input, Text } from 'native-base';
+
+
+
 import SearchBar from 'react-native-dynamic-search-bar';
 import CategoryFilter from './CategoryFilter.js';
-import ProductList from './ProductList.js';
-import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
-import CheckoutScreen from '../../utils/CheckoutScreen.js';
+import StoreList from './StoreList.js';
+
 import Carousel from 'react-native-banner-carousel';
-// import Animated from 'react-native-reanimated';
+
 import SearchProducts from './SearchProducts.js';
 
 import { useSelector, useDispatch } from 'react-redux';
-import { setHideSearch } from '../../redux/actions.js';
+import { setHideSearch } from '../../redux/actions/actions.js';
 import Header from '../../shared/Header.js';
 
-const data = require('../../../assets/data/products.json');
+import baseUrl from '../../../assets/common/baseUrl.js';
+import axios from 'axios';
+import SQLite from 'react-native-sqlite-storage';
+import { setUser, setLogged_in } from '../../redux/actions/actions.js';
+import Login from '../../utils/Login.js';
+
+const db = SQLite.openDatabase(
+    {
+        name: 'MainDB',
+        location: 'default',
+    },
+    () => { },
+    (error) => { console.log(error); }
+);
+
+// const data = require('../../../assets/data/shop.json');
 const Categories = require('../../../assets/data/category.json');
 
 const bannerImages = [
@@ -43,13 +60,12 @@ const BannerWidth = Dimensions.get('window').width;
 const BannerHeight = 260;
 
 
-export default function HomeScreen(props) {
+export default function HomeScreen({ navigation }) {
 
-    const { hideSearch } = useSelector(state => state.userReducer);
+    const { hideSearch, logged_in } = useSelector(state => state.userReducer);
     const dispatch = useDispatch();
 
     const [products, setProducts] = useState([]);
-    const [showCheckout, setShowCheckout] = useState(false);
     const [productsFiltered, setProductsFiltered] = useState([]);
     const [focus, setFocus] = useState();
     const [categories, setCategories] = useState([]);
@@ -57,16 +73,24 @@ export default function HomeScreen(props) {
     const [active, setActive] = useState();
     const [initialState, setInitialState] = useState([]);
     const [Refreshing, setRefreshing] = useState(false);
+    const [pos, setPos] = useState(0);
+    const [showLogin, setShowLogin] = useState(false);
     // const [hideSearch, setHideSearch] = useState(false);
 
     useEffect(() => {
-        setProducts(data);
-        setProductsFiltered(data);
         setFocus(false);
         setCategories(Categories);
-        setProductsCtg(data);
         setActive(-1);
-        setInitialState(data);
+        getInfo();
+
+        axios
+            .get(`${baseUrl}/shop`)
+            .then((res) => {
+                setProducts(res.data);
+                setProductsFiltered(res.data);
+                setProductsCtg(res.data);
+                setInitialState(res.data);
+            });
 
         return () => {
             setProducts([]);
@@ -78,6 +102,46 @@ export default function HomeScreen(props) {
         };
     }, []);
 
+    const getInfo = () => {
+        try {
+            db.transaction((tx) => {
+                tx.executeSql(
+                    'SELECT Name, Profile, Email, Username, Phone, Location FROM Users',
+                    [],
+                    (_tx, results) => {
+                        console.log(results.rows.item(0));
+                        var len = results.rows.length;
+                        if (len > 0) {
+                            var myName = results.rows.item(0).Name;
+                            var profilePic = results.rows.item(0).Profile;
+                            var userName = results.rows.item(0).Username;
+                            var myEmail = results.rows.item(0).Email;
+                            var phoneNum = results.rows.item(0).Phone;
+                            var myLocation = results.rows.item(0).Location;
+
+                            // console.log(myName, profilePic, myEmail, userName, phoneNum, myLocation);
+                            dispatch(setUser({
+                                name: myName,
+                                profile: profilePic,
+                                username: userName,
+                                email: myEmail,
+                                phone: phoneNum,
+                                location: myLocation,
+                            }));
+                            dispatch(setLogged_in(true));
+                            setShowLogin(false);
+                        } else {
+                            dispatch(setLogged_in(false));
+                            setShowLogin(true);
+                        }
+                    }
+                );
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
     const onRefresh = () => {
         setRefreshing(true);
         // setItems([...Items, { name: 'Item 69' }]);
@@ -86,9 +150,9 @@ export default function HomeScreen(props) {
         }, 1000);
     };
 
-    const toggleSearch = () => {
-        dispatch(setHideSearch(!hideSearch));
-    };
+    // const toggleSearch = () => {
+    //     dispatch(setHideSearch(true));
+    // };
 
     const searchProduct = (text) => {
         setProductsFiltered(
@@ -104,9 +168,17 @@ export default function HomeScreen(props) {
         setFocus(false);
     };
 
-
-    const onPressHandler = () => {
-        setShowCheckout(!showCheckout);
+    const checkPos = (currentPos) => {
+        let x = currentPos;
+        // console.log(x);
+        if (x >= 250) {
+            dispatch(setHideSearch(true));
+        }
+        else if (x <= 50) {
+            // console.log('Scrolling Down');
+            dispatch(setHideSearch(false));
+        }
+        setPos(currentPos);
     };
 
     // Categories
@@ -119,19 +191,29 @@ export default function HomeScreen(props) {
                     setProductsCtg(
                         products.filter((i) => {
                             // console.log('Category_ID:' + i.category.$oid + '\tCtg:' + ctg.$oid);
-                            if (i.category.$oid === ctg.$oid) {
+                            if (i.category.categoryID === ctg.$oid) {
                                 return i;
                             }
                         }),
-                        setActive(true)
-                    ),
+                    ), setActive(true),
                 ];
         }
-    }
+        // console.log(productsCtg);
+    };
+
+    const setShowLoginHandler = () => {
+        setShowLogin(!showLogin);
+    };
+
 
     const Banner = () => {
         return (
             <View>
+                <Login
+                    showLogin={showLogin}
+                    setShowLoginHandler={setShowLoginHandler}
+                    logged_in={logged_in}
+                />
                 <Carousel
                     autoplay
                     autoplayTimeout={5000}
@@ -162,63 +244,70 @@ export default function HomeScreen(props) {
 
     return (
         <View style={{ backgroundColor: 'transparent' }}>
-            <ImageBackground
+            {/* <ImageBackground
                 source={{ uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHy09JUSZGoQfZ30g9d_WMUwmaC5dCAKQbn59gPeKo-jpUlNTsH4PrC2ZfxHNC_iZr5bk&usqp=CAU' }}
                 resizeMode="cover"
-            >
-                <Header />
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        padding: 10,
-                    }}
-                >
-                    <SearchBar
-                        style={{
-                            width: BannerWidth - 70,
-                        }}
-                        fontColor="#76AB5A"
-                        iconColor="#76AB5A"
-                        shadowColor="#282828"
-                        cancelIconColor="#76AB5A"
-                        backgroundColor="#ffffff"
-                        placeholder="Maghanap ng Tindahan"
-                        onFocus={openList}
-                        onChangeText={(text) => searchProduct(text)}
-                        // onSearchPress={() => console.log('Search Icon is pressed')}
-                        onClearPress={onBlur}
-                    // onPress={openList}
-                    />
-                    <CheckoutScreen
-                        showCheckout={showCheckout}
-                        setShowCheckout={setShowCheckout}
-                    />
-                    <View style={{ marginLeft: 5, width: 55, height: 50, backgroundColor: '#00000000', marginTop: 7 }}>
-                        <FontAwesome5.Button
-                            size={23}
-                            name={'shopping-cart'}
-                            backgroundColor={'#00000000'}
-                            underlayColor={'#00000000'}
-                            color={'#354D29'}
-                            onPress={onPressHandler}
+            > */}
+            {
+                focus ? null : <Header name={'Home'} navigation={navigation} hide={false} />
+            }
+            {
+                hideSearch ?
+                    null
+                    :
+                    <View
+                        style={[
+                            {
+                                flexDirection: 'row',
+                                padding: 10,
+                            },
+                        ]}
+                    >
+                        <SearchBar
+                            style={focus ? {
+                                backgroundColor: 'white',
+                                height: 35,
+                            } : {
+                                backgroundColor: '#C6C6C6',
+                                height: 35,
+                            }
+                            }
+                            fontSize={13}
+                            padding={0}
+                            placeholderTextColor={'#62626299'}
+                            iconColor="transparent"
+                            shadowColor="#282828"
+                            cancelIconColor={'#959595'}
+                            clearIconContainer={{ color: '#959595' }}
+                            searchIconImageStyle={'#D3F2C2'}
+                            placeholder="Maghanap ng Tindahan"
+                            onFocus={openList}
+                            onChangeText={(text) => {
+                                searchProduct(text);
+                                openList();
+                            }}
+                            // onSearchPress={() => console.log('Search Icon is pressed')}
+                            onClearPress={onBlur}
+                            onPress={openList}
                         />
                     </View>
-                </View>
-            </ImageBackground>
+            }
+            {/* </ImageBackground> */}
             {
                 focus === true ?
                     <SearchProducts
-                        navigation={props.navigation}
+                        navigation={navigation}
                         productsFiltered={productsFiltered}
                     />
                     :
-                    <SafeAreaView style={{ backgroundColor: '#ffffff' }}>
+                    <SafeAreaView style={{ backgroundColor: '#f2f2f2' }}>
                         <FlatList
-                            numColumns={2}
-                            contentContainerStyle={{ paddingBottom: 300 }}
+                            onScroll={(e) => checkPos(e.nativeEvent.contentOffset.y)}
+                            // numColumns={2}
+                            contentContainerStyle={{ paddingBottom: 250 }}
                             data={productsCtg}
-                            renderItem={({ item }) => <ProductList key={item._id}
-                                navigation={props.navigation}
+                            renderItem={({ item }) => <StoreList key={item._id}
+                                navigation={navigation}
                                 item={item}
                             />
                             }

@@ -1,53 +1,70 @@
 [
     {
         "_id": {
-            "$oid": "62951dcec04446d4e72d1d0e"
+            "shopID": "629b8f9d7c008541dca8648c"
         },
-        "image": "https://assets.stickpng.com/images/580b57fbd9996e24bc43bba8.png",
+        "countInStock": 13,
+        "name": "Kamote",
+        "img": "https://cdn.shopify.com/s/files/1/0024/9695/4415/products/IMG_4530_1024x1024.jpg?v=1575875474",
+        "description": "Fresh Chicken",
         "price": 250,
-        "rating": 1,
-        "numReviews": 0,
+        "numReviews": 1,
+        "rating": 4,
         "isFeatured": true,
-        "name": "Aling Kuring",
-        "description": "Aling Kuring Poultry",
-        "category": {
-            "$oid": "6295220538d201a0e00839f2"
+        "shop": {
+            "shopID": "629f0cc00373fbed8035fa60"
         },
-        "countInStock": 25,
         "__v": 0
     },
     {
         "_id": {
-            "$oid": "6295265f43ee2a74b9ab756e"
-        },
-        "image": "https://assets.stickpng.com/images/580b57fbd9996e24bc43bba8.png",
-        "price": 100,
-        "rating": 4,
-        "numReviews": 1,
-        "isFeatured": true,
-        "name": "Nene's Butchery",
-        "description": "Nene's Butchery",
-        "category": {
-            "$oid": "6295220538d201a0e00839f2"
+            "shopID": "629b8fa3ce496d70a145b548"
         },
         "countInStock": 13,
+        "name": "Pork",
+        "img": "https://i0.wp.com/rmn.ph/wp-content/uploads/2021/07/KARNE-NG-BABOY-1.jpg?fit=1280%2C720&ssl=1",
+        "description": "Fresh Chicken",
+        "price": 250,
+        "numReviews": 1,
+        "rating": 4,
+        "isFeatured": true,
+        "shop": {
+            "shopID": "629f0d240373fbed8035fa62"
+        },
         "__v": 1
     },
     {
         "_id": {
-            "$oid": "629526eead02b4d2f288131d"
+            "shopID": "629b8fab4e18bad1b0ecb1fe"
         },
-        "image": "https://pngimg.com/uploads/rice/rice_PNG45.png",
-        "price": 450,
-        "rating": 3,
-        "numReviews": 0,
+        "countInStock": 13,
+        "name": "Bigas",
+        "img": "https://ph-test-11.slatic.net/p/438afb889b3b1e3fdc68b77f01124737.jpg",
+        "description": "Jasmine Rice",
+        "price": 250,
+        "numReviews": 1,
+        "rating": 4,
         "isFeatured": true,
-        "name": "Bigas ni Lolo",
-        "description": "Bigas ni Lolo",
-        "category": {
-            "$oid": "629526f27fadcf75f2bb3a9c"
+        "shop": {
+            "shopID": "629f0d510373fbed8035fa65"
         },
-        "countInStock": 30,
         "__v": 2
     },
+    {
+        "_id": {
+            "shopID": "629bc73d4bd651ff3930f04a"
+        },
+        "countInStock": 6,
+        "name": "Pechay",
+        "img": "https://meatmyveggies.com/wp-content/uploads/2021/05/pechay.jpg",
+        "description": "Fresh Pechay",
+        "price": 1000,
+        "numReviews": 1,
+        "rating": 4,
+        "isFeatured": true,
+        "shop": {
+            "shopID": "629f0cc00373fbed8035fa60"
+        },
+        "__v": 3
+    }
 ]
